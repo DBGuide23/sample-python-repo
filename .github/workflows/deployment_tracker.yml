@@ -5,7 +5,7 @@ on:
     types:
       - closed
     branches:
-      - beta  
+      - beta
 
 jobs:
   track_changes:
@@ -47,6 +47,8 @@ jobs:
           echo "COMMITS<<EOF" >> $GITHUB_ENV
           echo "$COMMITS" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+          # add a new line to the end of the commits variable.
+          echo "COMMITS=$COMMITS%$'\n'" >> $GITHUB_ENV
 
       - name: Get merged PRs into beta and format
         run: |
@@ -57,6 +59,7 @@ jobs:
           echo "PRS<<EOF" >> $GITHUB_ENV
           echo "$FORMATTED_PRS" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+          echo "PRS=$FORMATTED_PRS%$'\n'" >> $GITHUB_ENV
 
       - name: Create an Issue with the list of commits and PRs
         run: |
