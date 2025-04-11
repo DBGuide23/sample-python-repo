@@ -15,7 +15,7 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Needed for full history and merge-base
 
       - name: Fetch both main and beta branches explicitly
         run: |
@@ -49,13 +49,21 @@ jobs:
           fi
           echo "Commits to be tracked:"
           echo "$COMMITS"
-          echo "COMMITS=$COMMITS" >> $GITHUB_ENV
+          {
+            echo "COMMITS<<EOF"
+            echo "$COMMITS"
+            echo "EOF"
+          } >> $GITHUB_ENV
 
       - name: Get merged PRs into beta
         run: |
           PRS=$(gh pr list --base beta --state merged --json title,url -L 100)
           echo "Merged PRs: $PRS"
-          echo "PRS=$PRS" >> $GITHUB_ENV
+          {
+            echo "PRS<<EOF"
+            echo "$PRS"
+            echo "EOF"
+          } >> $GITHUB_ENV
 
       - name: Authenticate GitHub CLI
         run: gh auth login --with-token < ${{ secrets.GITHUB_TOKEN }}
