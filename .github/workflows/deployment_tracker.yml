@@ -46,24 +46,16 @@ jobs:
           echo "$COMMITS"
           # Format the commits with newlines using jq
           COMMITS_FORMATTED=$(echo "$COMMITS" | jq -Rs '. | split("\n") | join("\n")')
-          echo "COMMITS<<EOF" >> $GITHUB_ENV
-          echo "$COMMITS_FORMATTED" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-          echo "COMMITS=$COMMITS_FORMATTED" >> $GITHUB_ENV
+          echo "COMMITS_FORMATTED=$COMMITS_FORMATTED" >> $GITHUB_ENV
 
       - name: Get merged PRs into beta and format
         run: |
           RAW_PRS=$(gh pr list --base beta --state merged --json title,url -L 100)
-          FORMATTED_PRS=$(echo "$RAW_PRS" | jq -r '.[] | "- [\(.title | gsub("\\["; "\\[") | gsub("\\]"; "\\]") | gsub("\\("; "\\\\(") | gsub("\\)"; "\\\\)"))](\(.url))"')
-          echo "Formatted PRs:"
-          echo "$FORMATTED_PRS"
-          echo "PRS<<EOF" >> $GITHUB_ENV
-          echo "$FORMATTED_PRS" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-          echo "PRS=$FORMATTED_PRS%$'\n'" >> $GITHUB_ENV
+          FORMATTED_PRS=$(echo "$RAW_PRS" | jq -r '.[] | "- [\(.title)](\(.url))"')
+          echo "FORMATTED_PRS=$FORMATTED_PRS" >> $GITHUB_ENV
 
       - name: Create an Issue with the list of commits and PRs
         run: |
           ISSUE_TITLE="Changes Merged from Main to Beta"
-          ISSUE_BODY="### Commits Merged\n\n$COMMITS\n\n### Merged PRs\n\n$PRS"
+          ISSUE_BODY="### Commits Merged\n\n$COMMITS_FORMATTED\n\n### Merged PRs\n\n$(echo "$FORMATTED_PRS")"
           gh issue create --title "$ISSUE_TITLE" --body "$ISSUE_BODY"
