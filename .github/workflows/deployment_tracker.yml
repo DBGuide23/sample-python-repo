@@ -61,6 +61,5 @@ jobs:
       - name: Create an Issue with the list of commits and PRs
         run: |
           ISSUE_TITLE="Changes Merged from Main to Beta"
-          ISSUE_BODY="### Commits Merged
-          \n\n$COMMITS\n\n### Merged PRs\n\n$PRS"
+          ISSUE_BODY="### Commits Merged\n\n${COMMITS}\n\n### Merged PRs\n\n${PRS}"
           gh issue create --title "$ISSUE_TITLE" --body "$ISSUE_BODY"
