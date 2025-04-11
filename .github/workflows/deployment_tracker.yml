@@ -44,11 +44,12 @@ jobs:
           fi
           echo "Commits to be tracked:"
           echo "$COMMITS"
+          # Format the commits with newlines using jq
+          COMMITS_FORMATTED=$(echo "$COMMITS" | jq -Rs '. | split("\n") | join("\n")')
           echo "COMMITS<<EOF" >> $GITHUB_ENV
-          echo "$COMMITS" >> $GITHUB_ENV
+          echo "$COMMITS_FORMATTED" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-          # add a new line to the end of the commits variable.
-          echo "COMMITS=$COMMITS%$'\n'" >> $GITHUB_ENV
+          echo "COMMITS=$COMMITS_FORMATTED" >> $GITHUB_ENV
 
       - name: Get merged PRs into beta and format
         run: |
