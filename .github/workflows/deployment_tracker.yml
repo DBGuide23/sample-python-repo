@@ -5,32 +5,25 @@ on:
     types:
       - closed
     branches:
-      - beta  # Trigger only when PR is merged into beta
+      - beta  
 
 jobs:
   track_changes:
     runs-on: ubuntu-latest
 
     env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Required for GH CLI to work in Actions
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Fetch full history for merge-base to work
+          fetch-depth: 0
 
       - name: Fetch both main and beta branches explicitly
         run: |
           git fetch origin main
           git fetch origin beta
-
-      - name: Check the commit logs for main and beta
-        run: |
-          echo "Displaying last 5 commits from main:"
-          git log --oneline origin/main -n 5
-          echo "Displaying last 5 commits from beta:"
-          git log --oneline origin/beta -n 5
 
       - name: Get the merge base between main and beta
         run: |
@@ -39,7 +32,6 @@ jobs:
             echo "Error: No merge base found between main and beta."
             exit 1
           fi
-          echo "Base SHA: $BASE_SHA"
           echo "BASE_SHA=$BASE_SHA" >> $GITHUB_ENV
 
       - name: Get list of commits merged into beta
@@ -52,21 +44,19 @@ jobs:
           fi
           echo "Commits to be tracked:"
           echo "$COMMITS"
-          {
-            echo "COMMITS<<EOF"
-            echo "$COMMITS"
-            echo "EOF"
-          } >> $GITHUB_ENV
+          echo "COMMITS<<EOF" >> $GITHUB_ENV
+          echo "$COMMITS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-      - name: Get merged PRs into beta
+      - name: Get merged PRs into beta and format
         run: |
-          PRS=$(gh pr list --base beta --state merged --json title,url -L 100)
-          echo "Merged PRs: $PRS"
-          {
-            echo "PRS<<EOF"
-            echo "$PRS"
-            echo "EOF"
-          } >> $GITHUB_ENV
+          RAW_PRS=$(gh pr list --base beta --state merged --json title,url -L 100)
+          FORMATTED_PRS=$(echo "$RAW_PRS" | jq -r '.[] | "- [\(.title)](\(.url))"')
+          echo "Formatted PRs:"
+          echo "$FORMATTED_PRS"
+          echo "PRS<<EOF" >> $GITHUB_ENV
+          echo "$FORMATTED_PRS" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Create an Issue with the list of commits and PRs
         run: |
