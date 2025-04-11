@@ -11,11 +11,14 @@ jobs:
   track_changes:
     runs-on: ubuntu-latest
 
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Required for GH CLI to work in Actions
+
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Needed for full history and merge-base
+          fetch-depth: 0  # Fetch full history for merge-base to work
 
       - name: Fetch both main and beta branches explicitly
         run: |
@@ -64,9 +67,6 @@ jobs:
             echo "$PRS"
             echo "EOF"
           } >> $GITHUB_ENV
-
-      - name: Authenticate GitHub CLI
-        run: gh auth login --with-token < ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create an Issue with the list of commits and PRs
         run: |
