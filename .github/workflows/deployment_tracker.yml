@@ -1,0 +1,67 @@
+name: Track Merges from Main to Beta
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - beta  # Trigger only when PR is merged into beta
+
+jobs:
+  track_changes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Fetch both main and beta branches explicitly
+        run: |
+          git fetch origin main
+          git fetch origin beta
+
+      - name: Check the commit logs for main and beta
+        run: |
+          echo "Displaying last 5 commits from main:"
+          git log --oneline origin/main -n 5
+          echo "Displaying last 5 commits from beta:"
+          git log --oneline origin/beta -n 5
+
+      - name: Get the merge base between main and beta
+        run: |
+          BASE_SHA=$(git merge-base origin/main origin/beta)
+          if [ -z "$BASE_SHA" ]; then
+            echo "Error: No merge base found between main and beta."
+            exit 1
+          fi
+          echo "Base SHA: $BASE_SHA"
+          echo "BASE_SHA=$BASE_SHA" >> $GITHUB_ENV
+
+      - name: Get list of commits merged into beta
+        run: |
+          echo "Using Base SHA: $BASE_SHA"
+          COMMITS=$(git log --oneline $BASE_SHA..origin/beta)
+          if [ -z "$COMMITS" ]; then
+            echo "No new commits found to track."
+            exit 0
+          fi
+          echo "Commits to be tracked:"
+          echo "$COMMITS"
+          echo "COMMITS=$COMMITS" >> $GITHUB_ENV
+
+      - name: Get merged PRs into beta
+        run: |
+          PRS=$(gh pr list --base beta --state merged --json title,url -L 100)
+          echo "Merged PRs: $PRS"
+          echo "PRS=$PRS" >> $GITHUB_ENV
+
+      - name: Authenticate GitHub CLI
+        run: gh auth login --with-token < ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create an Issue with the list of commits and PRs
+        run: |
+          ISSUE_TITLE="Changes Merged from Main to Beta"
+          ISSUE_BODY="### Commits Merged\n\n$COMMITS\n\n### Merged PRs\n\n$PRS"
+          gh issue create --title "$ISSUE_TITLE" --body "$ISSUE_BODY" --label "qa-tracking"
