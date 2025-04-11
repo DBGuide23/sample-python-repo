@@ -52,7 +52,8 @@ jobs:
         run: |
           RAW_PRS=$(gh pr list --base beta --state merged --json title,url -L 100)
           FORMATTED_PRS=$(echo "$RAW_PRS" | jq -r '.[] | "- [\(.title)](\(.url))"')
-          echo "FORMATTED_PRS=$FORMATTED_PRS" >> $GITHUB_ENV
+          echo "Formatted PRs:"
+          echo "$FORMATTED_PRS"
 
       - name: Create an Issue with the list of commits and PRs
         run: |
