@@ -54,7 +54,7 @@ jobs:
       - name: Get merged PRs into beta and format
         run: |
           RAW_PRS=$(gh pr list --base beta --state merged --json title,url -L 100)
-          FORMATTED_PRS=$(echo "$RAW_PRS" | jq -r '.[] | "- [\(.title)](\(.url))"')
+          FORMATTED_PRS=$(echo "$RAW_PRS" | jq -r '.[] | "- [\(.title | gsub("\\["; "\\[") | gsub("\\]"; "\\]") | gsub("\\("; "\\\\(") | gsub("\\)"; "\\\\)"))](\(.url))"')
           echo "Formatted PRs:"
           echo "$FORMATTED_PRS"
           echo "PRS<<EOF" >> $GITHUB_ENV
