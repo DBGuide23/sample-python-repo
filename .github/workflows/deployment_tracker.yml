@@ -5,11 +5,12 @@ on:
     types:
       - closed
     branches:
-      - beta  # Trigger only when PR is merged into beta
+      - beta  
 
 jobs:
   track_changes:
     runs-on: ubuntu-latest
+
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -24,13 +25,6 @@ jobs:
           git fetch origin main
           git fetch origin beta
 
-      - name: Check the commit logs for main and beta
-        run: |
-          echo "Displaying last 5 commits from main:"
-          git log --oneline origin/main -n 5
-          echo "Displaying last 5 commits from beta:"
-          git log --oneline origin/beta -n 5
-
       - name: Get the merge base between main and beta
         run: |
           BASE_SHA=$(git merge-base origin/main origin/beta)
@@ -38,7 +32,6 @@ jobs:
             echo "Error: No merge base found between main and beta."
             exit 1
           fi
-          echo "Base SHA: $BASE_SHA"
           echo "BASE_SHA=$BASE_SHA" >> $GITHUB_ENV
 
       - name: Get list of commits merged into beta
@@ -55,26 +48,18 @@ jobs:
           echo "$COMMITS" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - name: Get merged PRs into beta
+      - name: Get merged PRs into beta and format
         run: |
-          PRS=$(gh pr list --base beta --state merged --json title,url -L 100)
-          echo "Merged PRs: $PRS"
+          RAW_PRS=$(gh pr list --base beta --state merged --json title,url -L 100)
+          FORMATTED_PRS=$(echo "$RAW_PRS" | jq -r '.[] | "- [\(.title)](\(.url))"')
+          echo "Formatted PRs:"
+          echo "$FORMATTED_PRS"
           echo "PRS<<EOF" >> $GITHUB_ENV
-          echo "$PRS" >> $GITHUB_ENV
+          echo "$FORMATTED_PRS" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-
-      - name: Authenticate GitHub CLI
-        run: gh auth setup-git
 
       - name: Create an Issue with the list of commits and PRs
         run: |
           ISSUE_TITLE="Changes Merged from Main to Beta"
-          ISSUE_BODY="### Commits Merged
-
-${{ env.COMMITS }}
-
-### Merged PRs
-
-${{ env.PRS }}"
-
+          ISSUE_BODY="### Commits Merged\n\n$COMMITS\n\n### Merged PRs\n\n$PRS"
           gh issue create --title "$ISSUE_TITLE" --body "$ISSUE_BODY"
